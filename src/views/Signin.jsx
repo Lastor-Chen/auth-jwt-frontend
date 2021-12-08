@@ -2,6 +2,24 @@
 
 import React from 'react'
 import authorizationAPI from '../apis/authorization'
+import utils from '../apis/utils'
+import store from '../store'
+
+/**
+ * @typedef {object} SigninResponse
+ * @property {'success' | 'error'} status
+ * @property {string} msg
+ * @property {string} token
+ * @property {UserData} user
+ */
+
+/**
+ * @typedef {object} UserData
+ * @property {number} id
+ * @property {string} email
+ * @property {string} name
+ * @property {boolean} isAdmin
+ */
 
 class Signin extends React.Component {
   state = {
@@ -24,6 +42,8 @@ class Signin extends React.Component {
   }
 
   onSubmit() {
+    if (store.isAuth) return alert('用戶已登入')
+
     if (this.state.isProcessing) return void 0
     this.setState({ isProcessing: true }, () => {
       this.submit()
@@ -35,14 +55,21 @@ class Signin extends React.Component {
       const { email, password } = this.state
       if (!email || !password) return alert('表單皆為必填')
 
+      /** @type {{ data: SigninResponse }} */
       const { data } = await authorizationAPI.signin({
         email: this.state.email,
         password: this.state.password,
       })
-      console.log(data)
+      if (data.status !== 'success') return alert('Unknown Server Error')
+
+      // 儲存 JWT
+      window.localStorage.setItem('token', data.token)
+      store.setCurrentUser(data.user, data.token)
+      store.showState()
+      alert('成功登入')
     } catch (err) {
       alert('登入失敗，帳號或密碼錯誤')
-      console.log(err)
+      utils.handleError(err)
     } finally {
       this.setState({ isProcessing: false })
     }
