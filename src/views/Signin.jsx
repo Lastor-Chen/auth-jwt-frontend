@@ -1,10 +1,13 @@
+// @ts-check
+
 import React from 'react'
-import axios from 'axios'
+import authorizationAPI from '../apis/authorization'
 
 class Signin extends React.Component {
   state = {
     email: '',
     password: '',
+    isProcessing: false,
   }
 
   constructor(props) {
@@ -21,14 +24,27 @@ class Signin extends React.Component {
   }
 
   onSubmit() {
+    if (this.state.isProcessing) return void 0
+    this.setState({ isProcessing: true }, () => {
+      this.submit()
+    })
+  }
+
+  async submit() {
     try {
-      const { data } = axios.post('http://localhost:9000/api/signin', {
+      const { email, password } = this.state
+      if (!email || !password) return alert('表單皆為必填')
+
+      const { data } = await authorizationAPI.signin({
         email: this.state.email,
         password: this.state.password,
       })
       console.log(data)
     } catch (err) {
+      alert('登入失敗，帳號或密碼錯誤')
       console.log(err)
+    } finally {
+      this.setState({ isProcessing: false })
     }
   }
 
@@ -40,13 +56,17 @@ class Signin extends React.Component {
           <div className="mb-3">
             <label htmlFor="email" className="form-label">Email address</label>
             <input type="email" className="form-control" id="email" value={this.state.email} onChange={this.onChangeInput} />
-            <div id="emailHelp" className="form-text">We'll never share your email with anyone else.</div>
+            <div id="emailHelp" className="form-text">test admin: admin@example.com</div>
+            <div id="emailHelp" className="form-text">test user: user@example.com</div>
           </div>
           <div className="mb-3">
             <label htmlFor="password" className="form-label">Password</label>
             <input type="password" className="form-control" id="password" value={this.state.password} onChange={this.onChangeInput} />
+            <div id="emailHelp" className="form-text">test pw: 123456</div>
           </div>
-          <button type="submit" className="btn btn-primary" onClick={this.onSubmit}>Submit</button>
+          <div className="text-center">
+            <button type="submit" className="btn btn-primary" onClick={this.onSubmit} disabled={this.state.isProcessing}>Submit</button>
+          </div>
         </div>
       </>
     )
